@@ -24,3 +24,8 @@
 - [x] Extend disconnect cleanup test to verify the remaining client can re-enter matchmaking after the peer leaves
 
 - [x] Add a polished landing page with product positioning, UK-only and 18+ messaging, safety highlights, and a CTA into the existing consent flow
+
+- [x] Fix possible false UK-only blocking in local or preview environments and clarify detected-region status
+- [x] Show clearer detected-region and lookup-source status in the access gate UI
+- [x] Add a targeted regression test for the region-status messaging
+- [x] Wire the region-status messaging test into the Vitest suite and confirm it executes

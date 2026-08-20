@@ -2,15 +2,16 @@ import { useEffect, useRef, useState } from "react";
 import type { FormEvent, ReactNode, RefObject } from "react";
 import { AlertTriangle, ArrowRight, Camera, CameraOff, Flag, LockKeyhole, Mic, MicOff, Radio, ShieldCheck, SkipForward, Square, Users, X, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { getRegionStatusText } from "@shared/geoStatus";
 
 type Stage = "checking" | "blocked" | "landing" | "consent" | "ready" | "queue" | "chat" | "stopped";
 type ChatMessage = { from: "you" | "stranger"; text: string };
-
 const wsUrl = () => `${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/ws`;
 
 export default function Home() {
   const [stage, setStage] = useState<Stage>("checking");
   const [country, setCountry] = useState<string | null>(null);
+  const [geoSource, setGeoSource] = useState<string | undefined>();
   const [consent, setConsent] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [draft, setDraft] = useState("");
@@ -30,6 +31,7 @@ export default function Home() {
       .then(res => res.json())
       .then(data => {
         setCountry(data.country);
+        setGeoSource(data.source);
         setStage(data.allowed ? "landing" : "blocked");
         setStatus(data.allowed ? "United Kingdom access confirmed" : "This service is currently available in the UK only");
       })
@@ -183,7 +185,7 @@ export default function Home() {
   };
 
   if (stage === "checking") return <Shell><GateCard icon={<Radio className="animate-pulse" />} eyebrow="REGION CHECK" title="Tuning into the right frequency" body={status}><div className="scanline" /></GateCard></Shell>;
-  if (stage === "blocked") return <Shell><GateCard icon={<Users />} eyebrow="UK ONLY" title="This channel is UK-only" body="Thanks for stopping by. UK Cam2Cam is currently available to people connecting from the United Kingdom. If you are travelling, please try again when you are back in the UK." /><p className="mt-4 text-center text-xs uppercase tracking-[0.25em] text-cyan-200/50">Detected region: {country ?? "unavailable"}</p></Shell>;
+  if (stage === "blocked") return <Shell><GateCard icon={<Users />} eyebrow="UK ONLY" title="This channel is UK-only" body="Thanks for stopping by. UK Cam2Cam is currently available to people connecting from the United Kingdom. If you are travelling, please try again when you are back in the UK." /><p className="mt-4 text-center text-xs uppercase tracking-[0.18em] text-cyan-200/50">{getRegionStatusText(country, geoSource)}</p><p className="mt-2 text-center text-xs text-slate-500">If this looks wrong, your network may be masking its region. Try again from a normal UK connection or configure a trusted proxy geolocation header.</p></Shell>;
   if (stage === "landing") return <Landing onEnter={() => setStage("consent")} />;
   if (stage === "consent") return <Shell><section className="hud-card max-w-2xl p-6 sm:p-10"><div className="mb-8 flex items-start justify-between"><div><div className="eyebrow">ACCESS PROTOCOL 01</div><h1 className="mt-3 text-4xl font-black uppercase leading-none text-white sm:text-6xl">Meet the<br /><span className="neon-pink">unknown.</span></h1></div><ShieldCheck className="h-10 w-10 text-cyan-300" /></div><div className="consent-panel"><div className="eyebrow text-pink-300">ADULTS ONLY / 18+</div><p className="mt-3 text-lg font-semibold text-white">UK Cam2Cam is an anonymous live video chat for adults aged 18 and over.</p><p className="mt-2 text-sm leading-6 text-slate-300">You may encounter unpredictable user-generated content. Do not share personal details. Be respectful, leave immediately if you feel uncomfortable, and use Report / Stop when needed.</p></div><label className="mt-7 flex cursor-pointer items-start gap-3 text-sm text-slate-200"><input type="checkbox" checked={consent} onChange={event => setConsent(event.target.checked)} className="mt-1 h-4 w-4 accent-pink-500" /> <span>I confirm that I am <strong className="text-white">18 or older</strong>, I agree to the adult-only terms, and I consent to anonymous video and text chat.</span></label><Button disabled={!consent} onClick={() => setStage("ready")} className="neon-button mt-8 w-full">Enter the UK channel <span>→</span></Button></section></Shell>;
 

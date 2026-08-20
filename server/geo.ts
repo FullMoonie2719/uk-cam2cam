@@ -39,13 +39,21 @@ export function countryFromRequest(req: Request) {
   return null;
 }
 
-export async function resolveRequestCountry(req: Request) {
-  const headerCountry = countryFromHeaders(req.headers);
+function clientIpFromHeaders(headers: IncomingHttpHeaders) {
+  const forwarded = headers["x-forwarded-for"];
+  const first = Array.isArray(forwarded) ? forwarded[0] : forwarded?.split(",")[0];
+  return first?.trim() || (typeof headers["x-real-ip"] === "string" ? headers["x-real-ip"] : null);
+}
+
+async function resolveCountryFromHeaders(headers: IncomingHttpHeaders) {
+  const headerCountry = countryFromHeaders(headers);
   if (headerCountry) return headerCountry;
   if (process.env.NODE_ENV === "development") return "GB";
 
-  const endpoint = process.env.GEOIP_API_URL;
-  if (!endpoint) return null;
+  const ip = clientIpFromHeaders(headers);
+  const configuredEndpoint = process.env.GEOIP_API_URL || "https://ipapi.co/{ip}/json/";
+  if (!ip && configuredEndpoint.includes("{ip}")) return null;
+  const endpoint = configuredEndpoint.replace("{ip}", encodeURIComponent(ip || ""));
   try {
     const response = await fetch(endpoint, { headers: { accept: "application/json" } });
     if (!response.ok) return null;
@@ -56,18 +64,10 @@ export async function resolveRequestCountry(req: Request) {
   }
 }
 
+export async function resolveRequestCountry(req: Request) {
+  return resolveCountryFromHeaders(req.headers);
+}
+
 export async function resolveUpgradeCountry(headers: IncomingHttpHeaders) {
-  const headerCountry = countryFromHeaders(headers);
-  if (headerCountry) return headerCountry;
-  if (process.env.NODE_ENV === "development") return "GB";
-  const endpoint = process.env.GEOIP_API_URL;
-  if (!endpoint) return null;
-  try {
-    const response = await fetch(endpoint, { headers: { accept: "application/json" } });
-    if (!response.ok) return null;
-    const payload = (await response.json()) as { country_code?: string; country?: string };
-    return normalizeCountryCode(payload.country_code ?? payload.country);
-  } catch {
-    return null;
-  }
+  return resolveCountryFromHeaders(headers);
 }

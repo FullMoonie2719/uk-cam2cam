@@ -38,10 +38,10 @@ Open the local URL printed by the development server. For local testing, set `AL
 | --- | --- | --- |
 | `PORT` | No | HTTP port. The managed runtime supplies this in hosted environments. |
 | `ALLOW_LOCAL_DEV` | No | Retained as a documented local-development setting; the current development server permits localhost automatically, while production remains restrictive. |
-| `GEOIP_API_URL` | Recommended in production | Optional server-side geolocation endpoint returning JSON with `country_code` or `country`. Configure this when your reverse proxy does not provide a trusted country header. |
+| `GEOIP_API_URL` | Optional | Server-side geolocation endpoint returning JSON with `country_code` or `country`; it may include `{ip}` as a placeholder. If omitted in production, the default `https://ipapi.co/{ip}/json/` fallback is used when a forwarded client IP is available. |
 | `NODE_ENV` | Yes | Use `development` locally and `production` for deployment. |
 
-The server trusts country headers only when they are added by a trusted edge or reverse proxy. Do not allow end users to inject these headers directly. In production, configure your proxy to overwrite them and strip incoming copies.
+The server trusts country headers only when they are added by a trusted edge or reverse proxy. If no trusted country header is present, it resolves the forwarded client IP through the configured geolocation endpoint. Do not allow end users to inject these headers directly. In production, configure your proxy to overwrite country and forwarding headers and strip incoming copies.
 
 ## HTTPS and WebSockets
 

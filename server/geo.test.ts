@@ -14,10 +14,19 @@ describe("geo helpers", () => {
     expect(countryFromRequest(request)).toBe("GB");
   });
 
-  it("allows local development only when explicitly enabled", () => {
+  it("allows local development without a proxy header", () => {
     vi.stubEnv("NODE_ENV", "development");
-    vi.stubEnv("ALLOW_LOCAL_DEV", "true");
     expect(countryFromRequest({ headers: {} } as never)).toBe("GB");
+    vi.unstubAllEnvs();
+  });
+
+  it("uses the forwarded client IP for production fallback geolocation", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ country_code: "GB" }) });
+    vi.stubGlobal("fetch", fetchMock);
+    const { resolveRequestCountry } = await import("./geo");
+    await expect(resolveRequestCountry({ headers: { "x-forwarded-for": "203.0.113.7" } } as never)).resolves.toBe("GB");
+    expect(fetchMock).toHaveBeenCalledWith("https://ipapi.co/203.0.113.7/json/", expect.any(Object));
     vi.unstubAllEnvs();
   });
 });

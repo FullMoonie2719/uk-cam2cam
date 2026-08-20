@@ -8,7 +8,7 @@ import { registerStorageProxy } from "./storageProxy";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
-import { resolveRequestCountry } from "../geo";
+import { countryFromHeaders, resolveRequestCountry } from "../geo";
 import { attachSignallingServer } from "../signalling";
 
 function isPortAvailable(port: number): Promise<boolean> {
@@ -40,7 +40,8 @@ async function startServer() {
   registerOAuthRoutes(app);
   app.get("/api/geo", async (req, res) => {
     const country = await resolveRequestCountry(req);
-    res.json({ country, allowed: country === "GB" || country === "UK" });
+    const source = countryFromHeaders(req.headers) ? "trusted proxy header" : country ? "IP geolocation fallback" : "unavailable";
+    res.json({ country, allowed: country === "GB" || country === "UK", source });
   });
   // tRPC API
   app.use(
