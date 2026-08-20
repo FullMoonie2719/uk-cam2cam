@@ -22,3 +22,5 @@
 - [x] Create an explicit GitHub publishing handoff or publish after user authorization
 - [x] Add a signalling test that closes one matched client and verifies peer-left/disconnect cleanup behavior and queue/session state reset
 - [x] Extend disconnect cleanup test to verify the remaining client can re-enter matchmaking after the peer leaves
+
+- [x] Add a polished landing page with product positioning, UK-only and 18+ messaging, safety highlights, and a CTA into the existing consent flow
