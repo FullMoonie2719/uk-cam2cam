@@ -8,6 +8,8 @@ import { registerStorageProxy } from "./storageProxy";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
+import { resolveRequestCountry } from "../geo";
+import { attachSignallingServer } from "../signalling";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -36,6 +38,10 @@ async function startServer() {
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
   registerStorageProxy(app);
   registerOAuthRoutes(app);
+  app.get("/api/geo", async (req, res) => {
+    const country = await resolveRequestCountry(req);
+    res.json({ country, allowed: country === "GB" || country === "UK" });
+  });
   // tRPC API
   app.use(
     "/api/trpc",
@@ -57,6 +63,8 @@ async function startServer() {
   if (port !== preferredPort) {
     console.log(`Port ${preferredPort} is busy, using port ${port} instead`);
   }
+
+  attachSignallingServer(server);
 
   server.listen(port, () => {
     console.log(`Server running on http://localhost:${port}/`);
